@@ -1,7 +1,5 @@
 <p align="center">
-  <img src="docs/assets/infinitebacklog-logo.svg" alt="Infinite Backlog Logo" width="30%">
-  <br>
-  <img src="docs/assets/mcp-logo.svg" alt="MCP Logo" width="30%">
+  <img src="docs/assets/readme-header.svg" alt="Infinite Backlog MCP" width="70%">
 </p>
 
 <h1 align="center">Infinite Backlog MCP Server</h1>
