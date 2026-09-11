@@ -11,6 +11,7 @@ Infinite Backlog has no public write API, so this server drives a real Chromium 
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 ![MCP](https://img.shields.io/badge/protocol-MCP-555555.svg)
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/abdullahhasan42/infinitebacklog-mcp)
 
 ## Recommended login (user)
 
