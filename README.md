@@ -1,12 +1,8 @@
-<table align="center" width="100%">
-  <tr>
-    <td align="center" bgcolor="#2c313c">
-      <img src="docs/assets/infinitebacklog-logo.svg" alt="Infinite Backlog Logo" width="30%">
-      <br>
-      <img src="docs/assets/mcp-logo.svg" alt="MCP Logo" width="30%">
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/assets/infinitebacklog-logo.svg" alt="Infinite Backlog Logo" width="30%">
+  <br>
+  <img src="docs/assets/mcp-logo.svg" alt="MCP Logo" width="30%">
+</p>
 
 <h1 align="center">Infinite Backlog MCP Server</h1>
 
