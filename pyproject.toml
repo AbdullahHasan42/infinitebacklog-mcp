@@ -1,0 +1,25 @@
+[project]
+name = "infinitebacklog-mcp"
+version = "1.0.1"
+description = "Hybrid MCP server for Infinite Backlog: deterministic Playwright tools plus an optional browser-use agent"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["mcp", "model-context-protocol", "infinitebacklog", "playwright", "browser-automation"]
+dependencies = [
+  "mcp>=2.0.0",
+  "playwright>=1.40.0",
+]
+
+[project.optional-dependencies]
+agent = ["browser-use>=0.13.0"]
+
+[project.scripts]
+infinitebacklog-mcp = "infinitebacklog_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/infinitebacklog_mcp"]

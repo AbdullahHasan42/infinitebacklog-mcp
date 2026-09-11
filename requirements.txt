@@ -1,0 +1,4 @@
+mcp>=2.0.0
+playwright>=1.40.0
+# optional for autonomous agent:
+# browser-use>=0.13.0
