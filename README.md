@@ -8,6 +8,8 @@ Hybrid [Model Context Protocol](https://modelcontextprotocol.io/) server for [In
 
 Infinite Backlog has no public write API, so this server drives a real Chromium session. After login it also uses read-only `GET /api/user_collections` to audit nested extras.
 
+AI clients using these tools: read [AGENTS.md](AGENTS.md).
+
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
 ![MCP](https://img.shields.io/badge/protocol-MCP-555555.svg)
@@ -18,8 +20,6 @@ Infinite Backlog has no public write API, so this server drives a real Chromium 
 - Sign in once on Infinite Backlog in your usual browser (any browser is fine).
 - Point the agent at that tab, or run headless if a session is already available.
 - Leave the signed-in tab open so ratings, reviews, and collection writes reuse it.
-
-**Agents:** prefer headless unless the user asks otherwise. For a private collection, use the tab the user pointed to, or `IB_COOKIES` / `set_cookies` only when a cookie JSON array is already in the environment. Never ask the user to harvest cookies from DevTools.
 
 ## Features
 
@@ -38,7 +38,7 @@ Infinite Backlog has no public write API, so this server drives a real Chromium 
 | Name                            | Description                                                                                                                               | Key inputs                                                                           |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `open_site`                     | Open `/`, `/games`, `/challenges`, or another IB path. Locked to `https://infinitebacklog.net`. `headless=false` opens a visible window for login; later calls reuse that session. | `path`, `wait_ms`, `headless`                                                        |
-| `search_games`                  | Search the games catalog via `#game-search`. Live filter is `/games?q=`. `/games?search=` does not filter. Do not fill `#platforms-search`. | `query`, `wait_ms`                                                                   |
+| `search_games`                  | Search the games catalog.                                                                                                                 | `query`, `wait_ms`                                                                   |
 | `get_page_text`                 | Extract visible page text.                                                                                                                | `max_chars`                                                                          |
 | `get_page_html`                 | Read HTML for a selector (default `body`).                                                                                                | `selector`, `max_chars`                                                              |
 | `get_links`                     | List links on the current page.                                                                                                           | `max_links`                                                                          |
@@ -49,9 +49,9 @@ Infinite Backlog has no public write API, so this server drives a real Chromium 
 | `set_cookies`                   | Inject auth cookies as a JSON array. Only `infinitebacklog.net` domains are accepted.                                                     | `cookies_json`                                                                       |
 | `current_url`                   | Return the current URL and title.                                                                                                         | none                                                                                 |
 | `close_browser`                 | Close the shared Playwright browser.                                                                                                      | none                                                                                 |
-| `list_related_content`          | Expand `ul.related-games-nav` tabs only (one tab is enough). Stay on `/games/{slug}`; do not click card labels such as EDITION.           | `game_slug`, `wait_ms`                                                               |
-| `list_collection_content_menus` | Read Add DLC, owned DLC, `addon-*` boxes, and GAME EDITION text on an edit form (login required).                                         | `edit_path`, `wait_ms`                                                               |
-| `add_game_content`              | Attach nested extras on the parent edit form. Searches DLC first, then every other menu before `not_found`.                               | `parent_slug`, `names`, `collection_id`                                              |
+| `list_related_content`          | List related DLC, packs, editions, and extras on a game page.                                                                             | `game_slug`, `wait_ms`                                                               |
+| `list_collection_content_menus` | Read Add DLC, owned DLC, addon boxes, and GAME EDITION text on an edit form (login required).                                             | `edit_path`, `wait_ms`                                                               |
+| `add_game_content`              | Attach nested extras on the parent edit form.                                                                                             | `parent_slug`, `names`, `collection_id`                                              |
 | `list_collection_game_options`  | Read copies, extra-platform control, progress, acquisition, ratings, reviews, and Play Records (no save).                                 | `slug`, `collection_id`                                                              |
 | `set_game_rating`               | Set or clear 1-10 overall plus Visual / Gameplay / Story / Audio / Playability.                                                           | `slug`, `score`, sub-ratings, `clear`                                                |
 | `add_game_review`               | Draft or publish at `/games/{slug}/add-review`. Publish needs 800+ characters.                                                            | `slug`, `body`, `publish`, `title`                                                   |
@@ -66,8 +66,6 @@ Infinite Backlog has no public write API, so this server drives a real Chromium 
 | `remove_play_record`            | Remove a row, or a whole category with `confirm=true`.                                                                                    | `slug`, `category`, `row_index`, `confirm`                                           |
 
 
-If a title is missing from DLC, search PACK/ADDON, EDITIONS, extra-content checklists, and every other live related tab before reporting `not_found`. Skins are often packs, not DLC.
-
 ### Autonomous (requires `browser-use` and an LLM key)
 
 
@@ -75,11 +73,6 @@ If a title is missing from DLC, search PACK/ADDON, EDITIONS, extra-content check
 | ---------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `run_browser_use_task` | High-level goal on infinitebacklog.net only. The agent plans and executes with vision plus DOM. Best for multi-step or fragile flows. | `task`, `max_steps`, `model`, `headless` |
 
-
-**When to use which**
-
-- Simple read or a known selector -> deterministic tools.
-- "Find all unfinished JRPGs and summarize playtime" -> `run_browser_use_task`.
 
 </details>
 
@@ -186,7 +179,7 @@ Replace the working directory with the absolute path to this project. Treat API 
 }
 ```
 
-Public pages work without login. Private collection features use the signed-in tab in Recommended login (user), or `IB_COOKIES` / `set_cookies` when those values are already in the environment.
+Public pages work without login. Private collection features need a signed-in session (see Recommended login).
 
 ## Environment variables
 
@@ -197,7 +190,7 @@ Public pages work without login. Private collection features use the signed-in t
 | `ANTHROPIC_API_KEY`   | Alternative                                | Anthropic key                                                                           |
 | `GOOGLE_API_KEY`      | Alternative                                | Google key                                                                              |
 | `BROWSER_USE_API_KEY` | Alternative                                | browser-use Cloud key                                                                   |
-| `IB_COOKIES`          | Optional (agents only)                     | JSON array of cookies for a logged-in session. Do not ask a human to fill this by hand. |
+| `IB_COOKIES`          | Optional                                   | JSON array of cookies for a logged-in session. Treat as a secret.                       |
 | `IB_HEADLESS`         | Optional                                   | Default headless mode for tools that do not pass `headless` (`true` / `false`)          |
 | `IB_VIEWPORT_WIDTH`   | Optional                                   | Playwright viewport width (default `1280`, clamped)                                     |
 | `IB_VIEWPORT_HEIGHT`  | Optional                                   | Playwright viewport height (default `800`, clamped)                                     |
@@ -205,36 +198,13 @@ Public pages work without login. Private collection features use the signed-in t
 | `IB_CHROMIUM_NO_SANDBOX` | Optional                                | Pass `--no-sandbox` to Chromium (default `false`; containers only)                      |
 
 
-## Collection model (live IB v1.13.6)
-
-DLC and packs are **nested `additions` on the parent collection row**, not standalone collection games.
-
-- `GET /api/user_collections?user_id=...&game_id=<DLC>` is empty even when that DLC is owned.
-- `already_owned` is parent `additions[]` (and the edit form Owned DLC list).
-- `/games/add/{dlc-slug}` SPA-redirects to `/games/{slug}`. There is no add form.
-- Parent edit path: `/users/{user}/collection/{parent-slug}/edit?id={collection_id}`
-- Pick extras from **Add DLC to your game**, tick **ADDONS/PACKS** labels only when unchecked, then click **UPDATE GAME** once.
-- Never click **DELETE GAME**, fill Acquisition Info, or change edition / Digital-Physical / play status during `add_game_content`.
-- Ratings and reviews are per IGDB game. Extra copies are extra `POST /user_collections` rows via `button.extra-platform`.
-- Only `set_game_acquisition` writes Acquisition Info. Only `delete_game_copy` clicks DELETE GAME (`confirm=true`).
-
-## Security and etiquette
+## Security
 
 - Unofficial project. Not affiliated with Infinite Backlog.
 - Tool navigation, cookies, in-page API fetches, and `run_browser_use_task` are locked to `https://infinitebacklog.net`. Off-origin URLs are rejected.
 - `evaluate_js` is off by default. Screenshots can only be written under the OS temp `infinitebacklog-mcp` directory. Chromium `--no-sandbox` is opt-in via `IB_CHROMIUM_NO_SANDBOX`.
-- Generic `click` / `fill` cannot drive DELETE GAME, DELETE DRAFT, YES/NO confirms, UNLOCK CUSTOM TAGS, or password fields. Dedicated delete tools still require `confirm=true`.
-- Be polite with request rate.
-- SPA pages often need a short wait after navigation. About 281 characters with no `h1` is the Vue chrome. Wait for `h1`, `#game-search`, or more text. On an edit form, wait until **UPDATE GAME** is visible.
-- Catalog search is `#game-search` (placeholder "Search for a game") with the Vue native value setter. `#platforms-search` is a sidebar filter. Live filter is `/games?q=`. `/games?search=` does not filter.
-- Duplicate titles use IGDB-style slugs (Hades 1995 is `hades`, Hades 2020 is `hades--1`).
-- `list_related_content` clicks only `ul.related-games-nav` tabs (href is often empty). A page-wide EDITION/DLC label is a card link to another game.
-- Collection rows use `/users/{user}/collection/{slug}?id={collection_id}`. **WRITE A REVIEW** on the edit form goes to `/games/{slug}/add-review`. **DELETE DRAFT** confirm is **YES**.
-- Nested extras are add-only in this pass. Do not auto-untick owned DLC.
-- Do not click **UNLOCK CUSTOM TAGS**, Play Records **SETTINGS**, or edit `/settings` / profile widgets. Return `profile_scope`.
-- `delete_game_review` only deletes a draft (`confirm=true`). Published reviews are `profile_scope` unless you name them.
-- Prefer headed `open_site` so the user logs into Infinite Backlog in the MCP-controlled Chromium window. Cookie injection is an agent-only fallback. A logged-in Brave tab with CDP is a separate attach path and is not launched by this server.
-- Concurrent tool calls share one browser and are serialized with a lock.
+- Treat API keys and `IB_COOKIES` as secrets. Do not commit `.env`.
+- Assistants using these tools should follow [AGENTS.md](AGENTS.md).
 
 ## Development
 
@@ -242,6 +212,7 @@ Project layout:
 
 ```text
 infinitebacklog-mcp/
+├── AGENTS.md              # operating brief for MCP client agents
 ├── src/infinitebacklog_mcp/
 │   ├── server.py          # MCPServer, instructions, main()
 │   ├── browser.py         # Playwright lifecycle
